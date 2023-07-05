@@ -42,6 +42,9 @@ TagManager:
   - player
   - kulka
   m_SortingLayers:
+  - name: UI
+    uniqueID: 337827429
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0

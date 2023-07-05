@@ -1,51 +1,72 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
     public Transform spawnPoint;
+    public Transform pocemkamdeš;
+    private Vector3 movingTargetPosition;
+    public static int enemies;
+
+    [Range(1f, 25f)]
+    public float spawnRadius = 19f;
+
+    [Range(0.5f, 15f)]
+    public float innerRadius = 13f;
+
+    [Range (1f,20f)]
+    public float spawnpersec = 1f;
+
     public float spawnInterval = 3f;
-    public float spawnRadius = 5f;
 
-    private float spawnTimer = 0f;
-
-    void Update()
+    void Start()
     {
-        spawnTimer += Time.deltaTime;
-
-        if (spawnTimer >= spawnInterval)
+        // Initialize the moving target position
+        if (pocemkamdeš != null)
         {
-            SpawnEnemy();
-            spawnTimer = 0f;
+            movingTargetPosition = pocemkamdeš.position;
         }
+        InvokeRepeating("updateSpawn", 0f, 1f);
+    }
+
+    void updateSpawn()
+    {
+        spawnInterval = 1f / spawnpersec;
+        // Call the SpawnEnemy function repeatedly with the calculated spawn interval.
+        CancelInvoke("SpawnEnemy");
+        InvokeRepeating("SpawnEnemy", 0f, spawnInterval);
     }
 
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(spawnPoint.position, spawnRadius);
+        Gizmos.DrawWireSphere(new Vector3(spawnPoint.position.x, spawnPoint.position.y, 0f), spawnRadius);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(new Vector3(spawnPoint.position.x, spawnPoint.position.y, 0f), innerRadius);
     }
 
     void SpawnEnemy()
     {
-        // Generate a random azimuth angle (horizontal angle) within the circle
-        float randomAzimuth = Random.Range(0f, 2f * Mathf.PI);
+        enemies++;
+        float randomAngle = Random.Range(0f, 360f);
+        Vector3 spawnPosition = spawnPoint.position + Quaternion.Euler(0f, 0f, randomAngle) * Vector3.up * spawnRadius;
 
-        // Generate a random inclination angle (vertical angle) within the circle
-        float randomInclination = Random.Range(-Mathf.PI / 2f, Mathf.PI / 2f);
-
-        // Calculate the spawn position based on the azimuth, inclination, and radius
-        Vector3 spawnPosition = spawnPoint.position + new Vector3(
-            Mathf.Cos(randomAzimuth) * Mathf.Cos(randomInclination),
-            Mathf.Sin(randomInclination),
-            Mathf.Sin(randomAzimuth) * Mathf.Cos(randomInclination)
-        ) * spawnRadius;
+        // Make sure the enemy is outside the inner circle
+        if (Vector3.Distance(new Vector3(spawnPosition.x, spawnPosition.y, 0f), new Vector3(spawnPoint.position.x, spawnPoint.position.y, 0f)) < innerRadius)
+        {
+            return;
+        }
 
         // Instantiate a new enemy at the spawn position
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
 
-        // Optional: You can add additional logic to modify the enemy's properties or behavior here
+        // Set the target position for the enemy movement
+        EnemyMovement enemyMovement = newEnemy.GetComponent<EnemyMovement>();
+        enemyMovement.SetTargetPosition(pocemkamdeš);
     }
+
 }
